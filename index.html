@@ -281,293 +281,293 @@
     </footer>
   </div>
 
-  <script>
-    // =========================
-    // CONFIGURAÇÃO / ESTADO
-    // =========================
+ <script>
+  // =========================
+  // CONFIGURAÇÃO / ESTADO
+  // =========================
 
-    // Spread e taxa de serviço para criptos
-    const spreadPercent = 0.01;        // 1% de spread
-    const taxaCryptoPercent = 0.05;    // 5% apenas para criptomoedas
+  // Spread e taxa de serviço para criptos
+  const spreadPercent = 0.01;        // 1% de spread
+  const taxaCryptoPercent = 0.05;    // 5% apenas para criptomoedas
 
-    // Cotações em memória
-    const rates = {
-      BTC: null,       // USD por 1 BTC
-      ETH: null,       // USD por 1 ETH
-      USDT: 1,         // 1 USDT = 1 USD
-      USD_PYG: null    // PYG por 1 USD
-    };
+  // Cotações em memória
+  const rates = {
+    BTC: null,       // USD por 1 BTC
+    ETH: null,       // USD por 1 ETH
+    USDT: 1,         // 1 USDT = 1 USD
+    USD_PYG: null    // PYG por 1 USD
+  };
 
-    const tickerDiv = document.getElementById("ticker");
-    const resultadoCotacaoDiv = document.getElementById("resultadoCotacao");
-    const equivalenteUSDSpan = document.getElementById("equivalenteUSD");
+  const tickerDiv = document.getElementById("ticker");
+  const resultadoCotacaoDiv = document.getElementById("resultadoCotacao");
+  const equivalenteUSDSpan = document.getElementById("equivalenteUSD");
 
-    const moedaSelect = document.getElementById("moeda");
-    const tipoOperacaoSelect = document.getElementById("tipoOperacao");
-    const valorPYGInput = document.getElementById("valorPYG");
+  const moedaSelect = document.getElementById("moeda");
+  const tipoOperacaoSelect = document.getElementById("tipoOperacao");
+  const valorPYGInput = document.getElementById("valorPYG");
 
-    // =========================
-    // FUNÇÕES AUXILIARES
-    // =========================
+  // =========================
+  // FUNÇÕES AUXILIARES
+  // =========================
 
-    function formatMoney(value, decimals = 2) {
-      return value.toLocaleString("pt-BR", {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-      });
+  function formatMoney(value, decimals = 2) {
+    return value.toLocaleString("pt-BR", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
+  }
+
+  function isCrypto(moeda) {
+    return ["BTC", "ETH", "USDT"].includes(moeda);
+  }
+
+  // =========================
+  // BUSCA DE COTAÇÕES (APIs)
+  // =========================
+
+  async function fetchRates() {
+    try {
+      // Binance para BTC/ETH e exchangerate.host (ou similar) para USD/PGY
+      const [btcRes, ethRes, fxRes] = await Promise.all([
+        fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"),
+        fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT"),
+        fetch("https://api.exchangerate.host/latest?base=USD&symbols=PYG")
+      ]);
+
+      const btcData = await btcRes.json();
+      const ethData = await ethRes.json();
+      const fxData = await fxRes.json();
+
+      rates.BTC = parseFloat(btcData.price);
+      rates.ETH = parseFloat(ethData.price);
+      rates.USD_PYG = fxData && fxData.rates ? parseFloat(fxData.rates.PYG) : null;
+
+      atualizarTicker();
+      atualizarSimulacao();
+    } catch (e) {
+      console.error("Erro ao buscar cotações:", e);
+      tickerDiv.textContent = "Erro ao carregar cotações. Verifique sua conexão ou tente novamente mais tarde.";
+    }
+  }
+
+  function atualizarTicker() {
+    if (!rates.BTC || !rates.ETH || !rates.USD_PYG) {
+      tickerDiv.textContent = "Carregando cotações...";
+      return;
     }
 
-    function isCrypto(moeda) {
-      return ["BTC", "ETH", "USDT"].includes(moeda);
+    const btcSite = rates.BTC * (1 + spreadPercent); // BTC com 1% spread
+    const ethSite = rates.ETH * (1 + spreadPercent); // ETH com 1% spread
+    const usdPygSite = rates.USD_PYG * (1 + spreadPercent); // USD → PYG com 1% spread
+
+    tickerDiv.innerHTML = `
+      <span><strong>BTC:</strong> US$ ${formatMoney(rates.BTC)} (site ~ US$ ${formatMoney(btcSite)})</span>
+      <span><strong>ETH:</strong> US$ ${formatMoney(rates.ETH)} (site ~ US$ ${formatMoney(ethSite)})</span>
+      <span><strong>USDT:</strong> US$ 1,00 (site 1:1)</span>
+      <span><strong>USD→PYG ref:</strong> ${formatMoney(rates.USD_PYG, 0)} PYG</span>
+      <span><strong>USD→PYG site (1%):</strong> ${formatMoney(usdPygSite, 0)} PYG</span>
+    `;
+  }
+
+  // =========================
+  // SIMULAÇÃO
+  // =========================
+
+  function atualizarSimulacao() {
+    const moeda = moedaSelect.value;
+    const tipoOperacao = tipoOperacaoSelect.value;
+    const valorPYG = parseFloat(valorPYGInput.value || "0");
+
+    if (!rates.USD_PYG || (!rates.BTC && !rates.ETH)) {
+      resultadoCotacaoDiv.textContent = "Aguardando cotações em tempo real...";
+      return;
     }
 
-    // =========================
-    // BUSCA DE COTAÇÕES (APIs)
-    // =========================
+    if (!valorPYG || valorPYG <= 0) {
+      resultadoCotacaoDiv.textContent = "Informe um valor em PYG para simular a operação.";
+      equivalenteUSDSpan.textContent = "Equivalente aproximado em USD: -";
+      return;
+    }
 
-    async function fetchRates() {
-      try {
-        // Binance para BTC/ETH e exchangerate.host (ou similar) para USD/PGY
-        const [btcRes, ethRes, fxRes] = await Promise.all([
-          fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"),
-          fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT"),
-          fetch("https://api.exchangerate.host/latest?base=USD&symbols=PYG")
-        ]);
+    // Converte PYG → USD pela cotação de referência (sem spread)
+    const valorUSDbase = valorPYG / rates.USD_PYG;
+    equivalenteUSDSpan.textContent = `Equivalente aproximado em USD: US$ ${formatMoney(valorUSDbase)}`;
 
-        const btcData = await btcRes.json();
-        const ethData = await ethRes.json();
-        const fxData = await fxRes.json();
+    let textoHTML = "";
+    let taxaServico = 0;
+    let totalUSD = valorUSDbase;
+    let totalPYGFinal = valorPYG;
+    let quantidade = 0;
+    let textoOperacao = ""; // <<< FALTAVA ISSO
 
-        rates.BTC = parseFloat(btcData.price);
-        rates.ETH = parseFloat(ethData.price);
-        rates.USD_PYG = fxData && fxData.rates ? parseFloat(fxData.rates.PYG) : null;
+    if (isCrypto(moeda)) {
+      const precoRef = moeda === "BTC" ? rates.BTC
+                      : moeda === "ETH" ? rates.ETH
+                      : 1; // USDT
 
-        atualizarTicker();
-        atualizarSimulacao();
-      } catch (e) {
-        console.error("Erro ao buscar cotações:", e);
-        tickerDiv.textContent = "Erro ao carregar cotações. Verifique sua conexão ou tente novamente mais tarde.";
+      // Spread de 1% em BTC/ETH. USDT mantém 1:1.
+      let precoSite = precoRef;
+      if (moeda === "BTC" || moeda === "ETH") {
+        precoSite = precoRef * (1 + spreadPercent);
       }
-    }
 
-    function atualizarTicker() {
-      if (!rates.BTC || !rates.ETH || !rates.USD_PYG) {
-        tickerDiv.textContent = "Carregando cotações...";
-        return;
+      // Quantidade de cripto baseada no valor base em USD
+      quantidade = valorUSDbase / precoSite;
+
+      // Taxa de serviço 5% apenas em criptos
+      taxaServico = valorUSDbase * taxaCryptoPercent;
+
+      if (tipoOperacao === "comprar") {
+        totalUSD = valorUSDbase + taxaServico;
+        textoOperacao = "Total aproximado a pagar";
+      } else {
+        totalUSD = valorUSDbase - taxaServico;
+        textoOperacao = "Total aproximado a receber";
       }
 
-      const btcSite = rates.BTC * (1 + spreadPercent); // BTC com 1% spread
-      const ethSite = rates.ETH * (1 + spreadPercent); // ETH com 1% spread
-      const usdPygSite = rates.USD_PYG * (1 + spreadPercent); // USD → PYG com 1% spread (para câmbio físico, se quiser)
+      totalPYGFinal = totalUSD * rates.USD_PYG;
 
-      tickerDiv.innerHTML = `
-        <span><strong>BTC:</strong> US$ ${formatMoney(rates.BTC)} (site ~ US$ ${formatMoney(btcSite)})</span>
-        <span><strong>ETH:</strong> US$ ${formatMoney(rates.ETH)} (site ~ US$ ${formatMoney(ethSite)})</span>
-        <span><strong>USDT:</strong> US$ 1,00 (site 1:1)</span>
-        <span><strong>USD→PYG ref:</strong> ${formatMoney(rates.USD_PYG, 0)} PYG</span>
-        <span><strong>USD→PYG site (1%):</strong> ${formatMoney(usdPygSite, 0)} PYG</span>
+      textoHTML = `
+        <div><strong>Moeda:</strong> ${moeda}</div>
+        <div><strong>Operação:</strong> ${tipoOperacao === "comprar" ? "Comprar" : "Vender"}</div>
+        <div><strong>Valor digitado (base) em PYG:</strong> ${formatMoney(valorPYG, 0)} PYG</div>
+        <div><strong>Valor base em USD (sem taxas):</strong> US$ ${formatMoney(valorUSDbase)}</div>
+        <hr />
+        <div><strong>Preço de referência:</strong> US$ ${formatMoney(precoRef)} por 1 ${moeda}</div>
+        <div><strong>Preço no site (1% de spread${moeda === "USDT" ? " não aplicado (mantém 1:1)" : ""}):</strong> US$ ${formatMoney(precoSite)} por 1 ${moeda}</div>
+        <div style="margin-top:6px;"><strong>Quantidade aproximada:</strong> ${quantidade.toFixed(8)} ${moeda}</div>
+        <div><strong>Taxa de serviço (5% sobre o valor em USD):</strong> US$ ${formatMoney(taxaServico)}</div>
+        <div style="margin-top:6px;">
+          <strong>${textoOperacao}:</strong> 
+          US$ ${formatMoney(totalUSD)} · 
+          ~ ${formatMoney(totalPYGFinal, 0)} PYG
+        </div>
+        <div class="small-text" style="margin-top:6px;">
+          Valores aproximados. Podem variar conforme liquidez, rede e horário da operação.
+        </div>
+      `;
+    } else if (moeda === "PYG") {
+      // Operação de câmbio físico de Guaranis usando tabela (ex.: Chaco)
+      const precoRef = rates.USD_PYG; // PYG por 1 USD
+      const precoSite = precoRef * (1 + spreadPercent); // 1% acima da referência
+
+      // Quanto isso representa em USD pela cotação do site
+      const usdPeloSite = valorPYG / precoSite;
+
+      if (tipoOperacao === "comprar") {
+        // Cliente quer COMPRAR PYG (vai pagar USD)
+        textoOperacao = "USD aproximado a pagar";
+        totalUSD = usdPeloSite;
+      } else {
+        // Cliente quer VENDER PYG (vai receber USD)
+        textoOperacao = "USD aproximado a receber";
+        totalUSD = usdPeloSite;
+      }
+
+      totalPYGFinal = valorPYG; // sem taxa de 5%
+
+      textoHTML = `
+        <div><strong>Moeda:</strong> PYG (Guaranis físicos)</div>
+        <div><strong>Operação:</strong> ${tipoOperacao === "comprar" ? "Comprar PYG" : "Vender PYG"}</div>
+        <div><strong>Valor em PYG:</strong> ${formatMoney(valorPYG, 0)} PYG</div>
+        <hr />
+        <div><strong>USD→PYG referência (ex.: Chaco):</strong> ${formatMoney(precoRef, 0)} PYG por 1 USD</div>
+        <div><strong>USD→PYG no site (1% spread):</strong> ${formatMoney(precoSite, 0)} PYG por 1 USD</div>
+        <div style="margin-top:6px;">
+          <strong>${textoOperacao}:</strong> 
+          ~ US$ ${formatMoney(totalUSD)}
+        </div>
+        <div class="small-text" style="margin-top:6px;">
+          Não há taxa de 5% para operações em Guaranis (usa a tabela do câmbio).
+        </div>
       `;
     }
 
-    // =========================
-    // SIMULAÇÃO
-    // =========================
+    resultadoCotacaoDiv.innerHTML = textoHTML;
+  }
 
-    function atualizarSimulacao() {
-      const moeda = moedaSelect.value;
-      const tipoOperacao = tipoOperacaoSelect.value;
-      const valorPYG = parseFloat(valorPYGInput.value || "0");
+  moedaSelect.addEventListener("change", atualizarSimulacao);
+  tipoOperacaoSelect.addEventListener("change", atualizarSimulacao);
+  valorPYGInput.addEventListener("input", atualizarSimulacao);
 
-      if (!rates.USD_PYG || (!rates.BTC && !rates.ETH)) {
-        resultadoCotacaoDiv.textContent = "Aguardando cotações em tempo real...";
-        return;
-      }
+  // =========================
+  // ENVIO PARA WHATSAPP
+  // =========================
 
-      if (!valorPYG || valorPYG <= 0) {
-        resultadoCotacaoDiv.textContent = "Informe um valor em PYG para simular a operação.";
-        equivalenteUSDSpan.textContent = "Equivalente aproximado em USD: -";
-        return;
-      }
+  document.getElementById("btnWhatsapp").addEventListener("click", function () {
+    const nome = document.getElementById("nome").value.trim();
+    const telefoneCliente = document.getElementById("telefone").value.trim();
+    const moedaForm = document.getElementById("moedaForm").value;
+    const tipoOperacaoForm = document.getElementById("tipoOperacaoForm").value;
+    const valorPYGForm = parseFloat(document.getElementById("valorPYGForm").value || "0");
+    const pagamento = document.getElementById("pagamento").value;
+    const observacoes = document.getElementById("observacoes").value.trim();
 
-      // Converte PYG → USD pela cotação de referência (sem spread)
-      const valorUSDbase = valorPYG / rates.USD_PYG;
-      equivalenteUSDSpan.textContent = `Equivalente aproximado em USD: US$ ${formatMoney(valorUSDbase)}`;
-
-      let textoHTML = "";
-      let taxaServico = 0;
-      let totalUSD = valorUSDbase;
-      let totalPYGFinal = valorPYG;
-      let quantidade = 0;
-
-      if (isCrypto(moeda)) {
-        const precoRef = moeda === "BTC" ? rates.BTC
-                        : moeda === "ETH" ? rates.ETH
-                        : 1; // USDT
-
-        // Spread de 1% em BTC/ETH. USDT mantém 1:1.
-        let precoSite = precoRef;
-        if (moeda === "BTC" || moeda === "ETH") {
-          precoSite = precoRef * (1 + spreadPercent);
-        }
-
-        // Quantidade de cripto baseada no valor base em USD
-        quantidade = valorUSDbase / precoSite;
-
-        // Taxa de serviço 5% apenas em criptos
-        taxaServico = valorUSDbase * taxaCryptoPercent;
-
-        if (tipoOperacao === "comprar") {
-          totalUSD = valorUSDbase + taxaServico;
-          textoOperacao = "Total aproximado a pagar";
-        } else {
-          totalUSD = valorUSDbase - taxaServico;
-          textoOperacao = "Total aproximado a receber";
-        }
-
-        totalPYGFinal = totalUSD * rates.USD_PYG;
-
-        textoHTML = `
-          <div><strong>Moeda:</strong> ${moeda}</div>
-          <div><strong>Operação:</strong> ${tipoOperacao === "comprar" ? "Comprar" : "Vender"}</div>
-          <div><strong>Valor digitado (base) em PYG:</strong> ${formatMoney(valorPYG, 0)} PYG</div>
-          <div><strong>Valor base em USD (sem taxas):</strong> US$ ${formatMoney(valorUSDbase)}</div>
-          <hr />
-          <div><strong>Preço de referência:</strong> US$ ${formatMoney(precoRef)} por 1 ${moeda}</div>
-          <div><strong>Preço no site (1% de spread${moeda === "USDT" ? " não aplicado (mantém 1:1)" : ""}):</strong> US$ ${formatMoney(precoSite)} por 1 ${moeda}</div>
-          <div style="margin-top:6px;"><strong>Quantidade aproximada:</strong> ${quantidade.toFixed(8)} ${moeda}</div>
-          <div><strong>Taxa de serviço (5% sobre o valor em USD):</strong> US$ ${formatMoney(taxaServico)}</div>
-          <div style="margin-top:6px;">
-            <strong>${textoOperacao}:</strong> 
-            US$ ${formatMoney(totalUSD)} · 
-            ~ ${formatMoney(totalPYGFinal, 0)} PYG
-          </div>
-          <div class="small-text" style="margin-top:6px;">
-            Valores aproximados. Podem variar conforme liquidez, rede e horário da operação.
-          </div>
-        `;
-      } else if (moeda === "PYG") {
-        // Operação de câmbio físico de Guaranis usando tabela (ex.: Chaco)
-        const precoRef = rates.USD_PYG; // PYG por 1 USD
-        const precoSite = precoRef * (1 + spreadPercent); // se quiser 1% acima da referência
-
-        // Quanto isso representa em USD pela cotação do site
-        const usdPelaRef = valorPYG / precoRef;
-        const usdPeloSite = valorPYG / precoSite;
-
-        if (tipoOperacao === "comprar") {
-          // Cliente quer COMPRAR PYG (vai pagar USD)
-          textoOperacao = "USD aproximado a pagar";
-          totalUSD = usdPeloSite;
-        } else {
-          // Cliente quer VENDER PYG (vai receber USD)
-          textoOperacao = "USD aproximado a receber";
-          totalUSD = usdPeloSite;
-        }
-
-        totalPYGFinal = valorPYG; // sem taxa de 5%
-
-        textoHTML = `
-          <div><strong>Moeda:</strong> PYG (Guaranis físicos)</div>
-          <div><strong>Operação:</strong> ${tipoOperacao === "comprar" ? "Comprar PYG" : "Vender PYG"}</div>
-          <div><strong>Valor em PYG:</strong> ${formatMoney(valorPYG, 0)} PYG</div>
-          <hr />
-          <div><strong>USD→PYG referência (ex.: Chaco):</strong> ${formatMoney(precoRef, 0)} PYG por 1 USD</div>
-          <div><strong>USD→PYG no site (1% spread):</strong> ${formatMoney(precoSite, 0)} PYG por 1 USD</div>
-          <div style="margin-top:6px;">
-            <strong>${textoOperacao}:</strong> 
-            ~ US$ ${formatMoney(totalUSD)}
-          </div>
-          <div class="small-text" style="margin-top:6px;">
-            Não há taxa de 5% para operações em Guaranis (usa a tabela do câmbio).
-          </div>
-        `;
-      }
-
-      resultadoCotacaoDiv.innerHTML = textoHTML;
+    if (!nome || !telefoneCliente || !valorPYGForm || valorPYGForm <= 0) {
+      alert("Preencha nome, telefone e valor em PYG para enviar o pedido.");
+      return;
     }
 
-    moedaSelect.addEventListener("change", atualizarSimulacao);
-    tipoOperacaoSelect.addEventListener("change", atualizarSimulacao);
-    valorPYGInput.addEventListener("input", atualizarSimulacao);
+    if (!rates.USD_PYG) {
+      alert("Cotações ainda não carregadas. Tente novamente em alguns segundos.");
+      return;
+    }
 
-    // =========================
-    // ENVIO PARA WHATSAPP
-    // =========================
+    const isCriptoForm = isCrypto(moedaForm);
 
-    document.getElementById("btnWhatsapp").addEventListener("click", function () {
-      const nome = document.getElementById("nome").value.trim();
-      const telefoneCliente = document.getElementById("telefone").value.trim();
-      const moedaForm = document.getElementById("moedaForm").value;
-      const tipoOperacaoForm = document.getElementById("tipoOperacaoForm").value;
-      const valorPYGForm = parseFloat(document.getElementById("valorPYGForm").value || "0");
-      const pagamento = document.getElementById("pagamento").value;
-      const observacoes = document.getElementById("observacoes").value.trim();
+    // Converte valor base para USD pela cotação de referência
+    const valorUSDFormBase = valorPYGForm / rates.USD_PYG;
 
-      if (!nome || !telefoneCliente || !valorPYGForm || valorPYGForm <= 0) {
-        alert("Preencha nome, telefone e valor em PYG para enviar o pedido.");
-        return;
+    let precoRef = 1;
+    if (moedaForm === "BTC") precoRef = rates.BTC;
+    else if (moedaForm === "ETH") precoRef = rates.ETH;
+    else if (moedaForm === "USDT") precoRef = 1;
+    else if (moedaForm === "PYG") precoRef = rates.USD_PYG;
+
+    let precoSite = precoRef;
+
+    if (isCriptoForm && (moedaForm === "BTC" || moedaForm === "ETH")) {
+      precoSite = precoRef * (1 + spreadPercent);
+    } else if (!isCriptoForm && moedaForm === "PYG") {
+      precoSite = precoRef * (1 + spreadPercent);
+    }
+
+    let taxaServicoForm = 0;
+    let totalUSDForm = valorUSDFormBase;
+    let totalPYGFormFinal = valorPYGForm;
+    let quantidadeForm = 0;
+    let textoOperacaoForm;
+
+    if (isCriptoForm) {
+      quantidadeForm = valorUSDFormBase / precoSite;
+      taxaServicoForm = valorUSDFormBase * taxaCryptoPercent;
+
+      if (tipoOperacaoForm === "comprar") {
+        totalUSDForm = valorUSDFormBase + taxaServicoForm;
+        textoOperacaoForm = "Total aproximado a pagar";
+      } else {
+        totalUSDForm = valorUSDFormBase - taxaServicoForm;
+        textoOperacaoForm = "Total aproximado a receber";
       }
 
-      if (!rates.USD_PYG) {
-        alert("Cotações ainda não carregadas. Tente novamente em alguns segundos.");
-        return;
+      totalPYGFormFinal = totalUSDForm * rates.USD_PYG;
+    } else if (moedaForm === "PYG") {
+      const precoRefPYG = rates.USD_PYG;
+      const precoSitePYG = precoRefPYG * (1 + spreadPercent);
+      const usdPeloSiteForm = valorPYGForm / precoSitePYG;
+
+      if (tipoOperacaoForm === "comprar") {
+        textoOperacaoForm = "USD aproximado a pagar";
+        totalUSDForm = usdPeloSiteForm;
+      } else {
+        textoOperacaoForm = "USD aproximado a receber";
+        totalUSDForm = usdPeloSiteForm;
       }
 
-      const isCriptoForm = isCrypto(moedaForm);
+      totalPYGFormFinal = valorPYGForm; // sem taxa
+    }
 
-      // Converte valor base para USD pela cotação de referência
-      const valorUSDFormBase = valorPYGForm / rates.USD_PYG;
-
-      let precoRef = 1;
-      if (moedaForm === "BTC") precoRef = rates.BTC;
-      else if (moedaForm === "ETH") precoRef = rates.ETH;
-      else if (moedaForm === "USDT") precoRef = 1;
-      else if (moedaForm === "PYG") precoRef = rates.USD_PYG;
-
-      let precoSite = precoRef;
-
-      if (isCriptoForm && (moedaForm === "BTC" || moedaForm === "ETH")) {
-        precoSite = precoRef * (1 + spreadPercent);
-      } else if (!isCriptoForm && moedaForm === "PYG") {
-        precoSite = precoRef * (1 + spreadPercent);
-      }
-
-      let taxaServicoForm = 0;
-      let totalUSDForm = valorUSDFormBase;
-      let totalPYGFormFinal = valorPYGForm;
-      let quantidadeForm = 0;
-      let textoOperacaoForm;
-
-      if (isCriptoForm) {
-        quantidadeForm = valorUSDFormBase / precoSite;
-        taxaServicoForm = valorUSDFormBase * taxaCryptoPercent;
-
-        if (tipoOperacaoForm === "comprar") {
-          totalUSDForm = valorUSDFormBase + taxaServicoForm;
-          textoOperacaoForm = "Total aproximado a pagar";
-        } else {
-          totalUSDForm = valorUSDFormBase - taxaServicoForm;
-          textoOperacaoForm = "Total aproximado a receber";
-        }
-
-        totalPYGFormFinal = totalUSDForm * rates.USD_PYG;
-      } else if (moedaForm === "PYG") {
-        const precoRefPYG = rates.USD_PYG;
-        const precoSitePYG = precoRefPYG * (1 + spreadPercent);
-        const usdPeloSiteForm = valorPYGForm / precoSitePYG;
-
-        if (tipoOperacaoForm === "comprar") {
-          textoOperacaoForm = "USD aproximado a pagar";
-          totalUSDForm = usdPeloSiteForm;
-        } else {
-          textoOperacaoForm = "USD aproximado a receber";
-          totalUSDForm = usdPeloSiteForm;
-        }
-
-        totalPYGFormFinal = valorPYGForm; // sem taxa
-      }
-
-      const texto = `
+    const texto = `
 *Novo pedido P2P - Bitcoin Câmbio P2P*
 
 Nome: ${nome}
@@ -589,25 +589,27 @@ ${textoOperacaoForm}: ~ ${totalUSDForm.toFixed(2)} USD · ~ ${totalPYGFormFinal.
 
 Forma de pagamento: ${pagamento}
 Observações: ${observacoes || "Nenhuma"}
-      `.trim();
+    `.trim();
 
-      // COLOQUE AQUI O SEU NÚMERO DE WHATSAPP DO PARAGUAI, APENAS NÚMEROS (COM DDI 595)
-      // Exemplo: 595991234567
-      const seuNumeroWhatsApp = "595991398215";
+    // COLOQUE AQUI O SEU NÚMERO DE WHATSAPP DO PARAGUAI, APENAS NÚMEROS (COM DDI 595)
+    // Exemplo: 595991234567
+    const seuNumeroWhatsApp = "595991398215";
 
-      const url = `https://wa.me/${seuNumeroWhatsApp}?text=${encodeURIComponent(texto)}`;
-      window.open(url, "_blank");
-    });
+    const url = `https://wa.me/${seuNumeroWhatsApp}?text=${encodeURIComponent(texto)}`;
+    window.open(url, "_blank");
+  });
 
-    // =========================
-    // INICIALIZAÇÃO
-    // =========================
+  // =========================
+  // INICIALIZAÇÃO
+  // =========================
 
-    // Busca as cotações na carga da página
-    fetchRates();
+  // Busca as cotações na carga da página
+  fetchRates();
 
-    // (Opcional) Atualizar cotações a cada 60 segundos
-    setInterval(fetchRates, 60000);
-  </script>
+  // Atualizar cotações a cada 60 segundos
+  setInterval(fetchRates, 60000);
+</script>
+
 </body>
 </html>
+
