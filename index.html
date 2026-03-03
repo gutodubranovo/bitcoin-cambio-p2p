@@ -1,790 +1,434 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <title>Bitcoin Câmbio P2P</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GUAX P2P | Internacional</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <style>
+        :root {
+            --bg: #05070a;
+            --card: #0f121a;
+            --neon-blue: #00f2ff;
+            --gold: #ffcc00;
+            --text: #ffffff;
+            --text-dim: #8892b0;
+            --danger: #ff4d4d;
+        }
 
-    body {
-      margin: 0;
-      padding: 0;
-      background: #02030a;
-      color: #f5f5f5;
-    }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
 
-    .container {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 16px;
-    }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-top: 60px;
+        }
 
-    .hero {
-      position: relative;
-      border-radius: 18px;
-      padding: 18px 16px 20px;
-      margin-top: 12px;
-      margin-bottom: 10px;
-      overflow: hidden;
-      background: radial-gradient(circle at top left, #ffb300 0, #ff6f00 20%, #0b1020 55%, #02030a 100%);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-    }
+        /* HEADER TICKER */
+        .header-ticker {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 242, 255, 0.2);
+            z-index: 1000;
+            padding: 12px 0;
+            overflow: hidden;
+        }
 
-    .hero::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      opacity: 0.18;
-      background:
-        linear-gradient(120deg, transparent 0 40%, rgba(255,255,255,0.15) 50%, transparent 60%),
-        repeating-linear-gradient(
-          -8deg,
-          rgba(255,255,255,0.12) 0,
-          rgba(255,255,255,0.12) 2px,
-          transparent 2px,
-          transparent 10px
-        );
-      mix-blend-mode: screen;
-      pointer-events: none;
-    }
+        .ticker-wrap {
+            display: flex;
+            white-space: nowrap;
+            animation: ticker 40s linear infinite;
+        }
 
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      max-width: 60%;
-    }
+        .ticker-item {
+            padding: 0 40px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--gold);
+        }
 
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(2, 3, 10, 0.65);
-      backdrop-filter: blur(6px);
-      margin-bottom: 8px;
-    }
+        @keyframes ticker {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
 
-    .logo-mark {
-      width: 28px;
-      height: 28px;
-      border-radius: 999px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 1.1rem;
-      background: radial-gradient(circle at 30% 20%, #fff8e1 0, #ff9800 45%, #e65100 100%);
-      color: #1b1400;
-      box-shadow: 0 0 12px rgba(255, 193, 7, 0.9);
-    }
+        /* LOGO GUAXINIM IMPONENTE */
+        .guax-logo-container {
+            width: 220px;
+            height: 220px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 25px rgba(0, 242, 255, 0.3));
+            animation: float 4s ease-in-out infinite;
+        }
 
-    .logo-text {
-      font-weight: 700;
-      font-size: 0.95rem;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: #ffecb3;
-    }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
 
-    .hero-title {
-      margin: 2px 0 4px;
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: #fff8e1;
-    }
+        /* TELAS */
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            margin: auto;
+            animation: fadeIn 0.5s ease-out;
+        }
 
-    .hero-subtitle {
-      margin: 0;
-      font-size: 0.9rem;
-      color: #ffe0b2;
-    }
+        .screen.active { display: flex; }
 
-    .hero-note {
-      margin-top: 6px;
-      font-size: 0.75rem;
-      color: #ffe0b2;
-      opacity: 0.9;
-    }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-    .hero-cartoon {
-      position: absolute;
-      right: -10px;
-      bottom: -4px;
-      width: 260px;
-      max-width: 50%;
-      opacity: 0.5;
-      border-radius: 999px;
-      background: radial-gradient(circle at top, #ffcc80 0, #ff9800 40%, #0b1020 75%);
-    }
+        /* UI ELEMENTS */
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--gold);
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: -2px;
+            margin-bottom: 10px;
+        }
 
-    .hero-cartoon::after {
-      content: "Ponte da Amizade · estilo cartoon";
-      position: absolute;
-      left: 10%;
-      top: 15%;
-      width: 80%;
-      text-align: center;
-      font-size: 0.7rem;
-      color: rgba(10,10,20,0.85);
-      font-weight: 600;
-    }
+        .card {
+            background: var(--card);
+            width: 100%;
+            padding: 30px;
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
 
-    .card {
-      background: #050816;
-      border-radius: 14px;
-      padding: 16px;
-      margin-top: 16px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
-      border: 1px solid rgba(255,255,255,0.04);
-    }
+        .input-group { margin-bottom: 20px; width: 100%; }
+        label { display: block; margin-bottom: 8px; color: var(--text-dim); font-size: 0.85rem; font-weight: 600; }
+        
+        input, select {
+            width: 100%;
+            padding: 16px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 14px;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+        }
 
-    .section-title {
-      margin: 0;
-      font-size: 1.15rem;
-      color: #ffb300;
-    }
+        input:focus { border-color: var(--neon-blue); }
 
-    .section-subtitle {
-      margin: 4px 0 0;
-      font-size: 0.8rem;
-      color: #c7c7c7;
-    }
+        .btn-primary {
+            background: linear-gradient(90deg, var(--neon-blue), #0072ff);
+            color: #000;
+            border: none;
+            padding: 20px;
+            border-radius: 16px;
+            font-weight: 900;
+            font-size: 1.1rem;
+            cursor: pointer;
+            width: 100%;
+            text-transform: uppercase;
+            transition: 0.3s;
+        }
 
-    .ticker {
-      font-size: 0.8rem;
-      margin-top: 8px;
-      padding: 8px;
-      border-radius: 8px;
-      background: #02030f;
-      border: 1px solid #222842;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 242, 255, 0.4); }
 
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 3px 8px;
-      border-radius: 999px;
-      background: #0b1020;
-      font-size: 0.75rem;
-      color: #e0e0e0;
-    }
+        .btn-back {
+            background: transparent;
+            color: var(--text-dim);
+            border: none;
+            padding: 15px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            font-weight: 600;
+            text-decoration: underline;
+        }
 
-    label {
-      display: block;
-      font-size: 0.9rem;
-      margin-bottom: 4px;
-      color: #e0e0e0;
-    }
+        /* BOX MATEMÁTICA */
+        .math-box {
+            background: rgba(0, 242, 255, 0.05);
+            padding: 18px;
+            border-radius: 16px;
+            border-left: 4px solid var(--gold);
+            margin-bottom: 20px;
+        }
 
-    input, select, button, textarea {
-      width: 100%;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #222842;
-      background: #050816;
-      color: #f5f5f5;
-      font-size: 0.95rem;
-    }
+        .math-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem; }
+        .math-total { font-size: 1.2rem; font-weight: 900; color: var(--neon-blue); margin-top: 10px; border-top: 1px solid #333; padding-top: 10px; }
 
-    input:focus, select:focus, textarea:focus {
-      outline: 2px solid #ffb300;
-      outline-offset: 1px;
-    }
+        .warning-text {
+            color: var(--danger);
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            line-height: 1.4;
+            background: rgba(255, 77, 77, 0.1);
+            padding: 10px;
+            border-radius: 10px;
+        }
 
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .col-6 {
-      flex: 1 1 220px;
-    }
-
-    .results {
-      margin-top: 12px;
-      padding: 10px;
-      background: #02030f;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      border: 1px solid #222842;
-    }
-
-    .results strong {
-      color: #ffb300;
-    }
-
-    .btn-whatsapp {
-      margin-top: 16px;
-      background: #25d366;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .btn-whatsapp:hover {
-      filter: brightness(1.1);
-    }
-
-    .small-text {
-      font-size: 0.8rem;
-      color: #b0b0b0;
-      margin-top: 6px;
-    }
-
-    footer {
-      text-align: center;
-      font-size: 0.75rem;
-      color: #777;
-      margin: 24px 0 8px;
-    }
-
-    .toggle-btn {
-      margin-top: 10px;
-      font-size: 0.8rem;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid #444b70;
-      background: #050816;
-      color: #e0e0e0;
-      cursor: pointer;
-      width: auto;
-    }
-
-    .toggle-btn:hover {
-      background: #11152a;
-    }
-
-    #fxSection {
-      margin-top: 10px;
-      display: none;
-    }
-
-    @media (max-width: 720px) {
-      .hero-content {
-        max-width: 100%;
-      }
-      .hero-cartoon {
-        display: none;
-      }
-    }
-  </style>
+        #qrcode { background: #fff; padding: 10px; border-radius: 12px; margin: 20px 0; }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <!-- HERO -->
-    <section class="hero">
-      <div class="hero-content">
-        <div class="logo">
-          <span class="logo-mark">₿</span>
-          <span class="logo-text">Bitcoin Câmbio P2P</span>
+
+    <!-- HEADER TICKER -->
+    <header class="header-ticker">
+        <div class="ticker-wrap" id="ticker-content">
+            <span class="ticker-item">GUAX P2P: A MOEDA DO FUTURO</span>
+            <span class="ticker-item">BTC: $...</span>
+            <span class="ticker-item">ETH: $...</span>
+            <span class="ticker-item">USDT: $1.00</span>
+            <span class="ticker-item">SOL: $...</span>
         </div>
-        <h1 class="hero-title">Cripto e câmbio em Ciudad del Este</h1>
-        <p class="hero-subtitle">
-          Bitcoin, Ethereum e USDT com pagamento em Guaranis ou PIX em Real.
-        </p>
-        <p class="hero-note">
-          Taxa de serviço de <strong>5% nas operações em criptomoedas</strong>. Câmbio físico sem taxa extra.
-        </p>
-      </div>
-      <div class="hero-cartoon"></div>
+    </header>
+
+    <!-- TELA 1: HOME -->
+    <section id="screen-1" class="screen active">
+        <div class="guax-logo-container">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <path d="M60 70 L40 30 L85 60 Z" fill="#161b22" stroke="#ffcc00" stroke-width="2"/>
+                <path d="M140 70 L160 30 L115 60 Z" fill="#161b22" stroke="#ffcc00" stroke-width="2"/>
+                <path d="M100 170 L50 130 L55 70 L100 50 L145 70 L150 130 Z" fill="#161b22" stroke="#ffcc00" stroke-width="3"/>
+                <path d="M55 85 L145 85 L140 115 L60 115 Z" fill="#05070a" opacity="0.9"/>
+                <rect x="75" y="95" width="15" height="4" fill="#00f2ff" rx="2"><animate attributeName="opacity" values="1;0.3;1" dur="3s" repeatCount="indefinite" /></rect>
+                <rect x="110" y="95" width="15" height="4" fill="#00f2ff" rx="2"><animate attributeName="opacity" values="1;0.3;1" dur="3s" repeatCount="indefinite" /></rect>
+                <path d="M90 140 L100 155 L110 140" fill="none" stroke="#ffcc00" stroke-width="2" opacity="0.6"/>
+            </svg>
+        </div>
+        <h1 class="hero-title">GUAX P2P</h1>
+        <p style="color: var(--text-dim); margin-bottom: 40px; text-align: center; font-weight: 600; letter-spacing: 1px;">SISTEMA INTERNACIONAL DE CÂMBIO</p>
+        <button class="btn-primary" onclick="goToScreen(2)">Iniciar Compra</button>
     </section>
 
-    <!-- COTAÇÕES RESUMIDAS -->
-    <section class="card">
-      <header>
-        <h2 class="section-title">Cotações rápidas</h2>
-        <p class="section-subtitle">
-          Valores aproximados para referência no atendimento.
-        </p>
-      </header>
-      <div class="ticker" id="ticker">
-        Carregando cotações...
-      </div>
+    <!-- TELA 2: FORMULÁRIO -->
+    <section id="screen-2" class="screen">
+        <div class="card">
+            <h2 style="margin-bottom: 25px; color: var(--neon-blue); text-align: center;">Realizar Pedido</h2>
+            
+            <div class="input-group">
+                <label>Nome Completo (Sem abreviações)</label>
+                <input type="text" id="name-input" placeholder="Ex: Joao Maria Jose">
+            </div>
+
+            <div class="input-group">
+                <label>E-mail Obrigatório</label>
+                <input type="email" id="email-input" placeholder="seu@email.com">
+            </div>
+
+            <div class="input-group">
+                <label>WhatsApp (DDD + Número)</label>
+                <input type="tel" id="whatsapp-input" placeholder="(11) 999999999">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <div class="input-group" style="flex: 1;">
+                    <label>Moeda</label>
+                    <select id="coin-select" onchange="calculate()">
+                        <option value="USDT">USDT</option>
+                        <option value="USDC">USDC</option>
+                    </select>
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label>Valor BRL (50-500)</label>
+                    <input type="number" id="brl-input" placeholder="100" oninput="calculate()">
+                </div>
+            </div>
+
+            <div class="math-box">
+                <div class="math-row">
+                    <span>Cotação USD:</span>
+                    <span id="rate-display">R$ 0,00</span>
+                </div>
+                <div class="math-row">
+                    <span>Taxa de Rede já aplicada:</span>
+                    <span style="color: var(--white);"> 1%</span>
+                </div>
+                <div class="math-total">
+                    <span>Você recebe:</span>
+                    <span id="receive-display">0.00 USDT</span>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Rede de Envio</label>
+                <select id="network-select">
+                    <option value="TRON (TRC20)">TRON (TRC20)</option>
+                    <option value="BNB (BEP20)">BNB (BEP20)</option>
+                    <option value="POL (Polygon)">POL (Polygon)</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Endereço da Carteira (Wallet)</label>
+                <input type="text" id="wallet-input" placeholder="0x... ou T...">
+            </div>
+
+            <button class="btn-primary" onclick="validateStep2()">Avançar para Pix</button>
+            <button class="btn-back" onclick="goToScreen(1)">Voltar ao Início</button>
+        </div>
     </section>
 
-    <!-- CALCULADORA CRIPTO P2P -->
-    <section class="card">
-      <header>
-        <h2 class="section-title">Simulador de Cripto P2P</h2>
-        <p class="section-subtitle">
-          Digite o valor em <strong>Guaranis (PYG)</strong> para saber quanto paga ou recebe em cripto.
-        </p>
-      </header>
+    <!-- TELA 3: PAGAMENTO -->
+    <section id="screen-3" class="screen">
+        <div class="card" style="text-align: center;">
+            <h2 style="color: var(--gold);">Pagamento Pix</h2>
+            <p style="margin: 15px 0; font-size: 0.9rem; color: var(--text-dim);">Transfira exatamente:</p>
+            <p id="final-brl" style="font-size: 2.5rem; font-weight: 900; color: #fff;">R$ 0,00</p>
+            
+            <canvas id="qrcode"></canvas>
 
-      <div class="row" style="margin-top: 8px;">
-        <div class="col-6">
-          <label for="moeda">Criptomoeda</label>
-          <select id="moeda">
-            <option value="BTC">BTC - Bitcoin</option>
-            <option value="ETH">ETH - Ethereum</option>
-            <option value="USDT">USDT - Tether</option>
-          </select>
-        </div>
-        <div class="col-6">
-          <label for="tipoOperacao">Operação</label>
-          <select id="tipoOperacao">
-            <option value="comprar">Comprar cripto</option>
-            <option value="vender">Vender cripto</option>
-          </select>
-        </div>
-      </div>
+            <div class="input-group" style="text-align: left;">
+                <label>Pix Copia e Cola</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="pix-code" value="00020126700014br.gov.bcb.pix01361cd043c1-4835-477e-82ca-c6971712846a0208GUAX P2P5204000053039865802BR5925Gustavo Henrique Elias Sa6009Sao Paulo62110507GUAXP2P63049839" readonly>
+                    <button onclick="copyPix()" style="background: var(--gold); border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold;">Copiar</button>
+                </div>
+            </div>
 
-      <div class="row" style="margin-top: 12px;">
-        <div class="col-6">
-          <label for="valorPYG">Valor em Guaranis (PYG)</label>
-          <input type="number" id="valorPYG" placeholder="Ex: 1000000" step="1" min="0" />
-          <div class="small-text" id="equivalenteUSD">
-            Equivalente aproximado em USD: -
-          </div>
-          <div class="small-text" id="equivalenteBRL">
-            Equivalente aproximado em BRL: -
-          </div>
-        </div>
-      </div>
+            <div class="warning-text">
+                ⚠️ NÃO CLIQUE NO BOTÃO SE NÃO PAGOU. <br>Tentativas de fraude bloqueiam sua carteira em nossa rede.
+            </div>
 
-      <div class="results" id="resultadoCotacao">
-        Informe um valor em PYG para simular.
-      </div>
+            <button class="btn-primary" style="background: #25d366; color: white;" onclick="finishOrder()">
+                Paguei, Enviar Comprovante
+            </button>
+            <button class="btn-back" onclick="goToScreen(2)">Corrigir Dados</button>
+        </div>
     </section>
 
-    <!-- BOTÃO PARA CÂMBIO FÍSICO -->
-    <section class="card">
-      <header>
-        <h2 class="section-title">Câmbio físico (opcional)</h2>
-        <p class="section-subtitle">
-          Use apenas se o cliente quiser trocar dinheiro (USD / BRL / PYG).
-        </p>
-      </header>
+    <script>
+        let realUsdRate = 5.20;
+        const spread = 0.005; // 0.5%
+        const networkFee = 0.01; // 1%
+        let orderData = {};
 
-      <button class="toggle-btn" id="toggleFxBtn">Mostrar simulador de câmbio físico</button>
+        window.onload = () => {
+            fetchRate();
+            fetchTicker();
+            generateQR();
+        };
 
-      <div id="fxSection">
-        <div class="row" style="margin-top: 10px;">
-          <div class="col-6">
-            <label for="fxDirecao">Tipo de operação</label>
-            <select id="fxDirecao">
-              <option value="USD_PYG">USD → PYG</option>
-              <option value="BRL_PYG">BRL → PYG</option>
-              <option value="PYG_USD">PYG → USD</option>
-              <option value="PYG_BRL">PYG → BRL</option>
-            </select>
-          </div>
-          <div class="col-6">
-            <label for="fxValor">Valor</label>
-            <input type="number" id="fxValor" placeholder="Ex: 100 (USD/BRL) ou 100000 (PYG)" step="0.01" min="0" />
-          </div>
-        </div>
-
-        <div class="results" id="fxResultado">
-          Informe um valor para simular o câmbio físico.
-        </div>
-      </div>
-    </section>
-
-    <!-- FORMULÁRIO P2P -->
-    <section class="card">
-      <header>
-        <h2 class="section-title">Enviar pedido pelo WhatsApp</h2>
-        <p class="section-subtitle">
-          Preencha e envie, você será direcionado para o WhatsApp com os dados prontos.
-        </p>
-      </header>
-
-      <div class="row" style="margin-top: 10px;">
-        <div class="col-6">
-          <label for="nome">Nome completo</label>
-          <input type="text" id="nome" placeholder="Seu nome" />
-        </div>
-        <div class="col-6">
-          <label for="telefone">Telefone (WhatsApp)</label>
-          <input type="tel" id="telefone" placeholder="+595 9xx xxx xxx" />
-        </div>
-      </div>
-
-      <div class="row" style="margin-top: 12px;">
-        <div class="col-6">
-          <label for="moedaForm">Tipo de operação</label>
-          <select id="moedaForm">
-            <option value="BTC">BTC - Bitcoin</option>
-            <option value="ETH">ETH - Ethereum</option>
-            <option value="USDT">USDT - Tether</option>
-            <option value="PYG">PYG - Câmbio físico</option>
-          </select>
-        </div>
-
-        <div class="col-6">
-          <label for="tipoOperacaoForm">Comprar ou vender</label>
-          <select id="tipoOperacaoForm">
-            <option value="comprar">Comprar</option>
-            <option value="vender">Vender</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="row" style="margin-top: 12px;">
-        <div class="col-6">
-          <label for="valorPYGForm">Valor em Guaranis (PYG)</label>
-          <input type="number" id="valorPYGForm" placeholder="Ex: 500000" step="1" min="0" />
-        </div>
-        <div class="col-6">
-          <label for="pagamento">Forma de pagamento</label>
-          <select id="pagamento">
-            <option value="Pix BRL">Pix em Real (BRL)</option>
-            <option value="Pix PYG">Pix em Guaranis (PYG)</option>
-            <option value="Dinheiro">Dinheiro (efectivo)</option>
-            <option value="Criptomoedas">Criptomoedas</option>
-          </select>
-        </div>
-      </div>
-
-      <label style="margin-top: 12px;" for="observacoes">Observações (opcional)</label>
-      <textarea id="observacoes" rows="3" placeholder="Banco, horário, rede da cripto, etc."></textarea>
-
-      <button class="btn-whatsapp" id="btnWhatsapp">
-        Enviar pedido para o WhatsApp
-      </button>
-
-      <div class="small-text">
-        Confirme sempre os dados de depósito antes de enviar valores.
-      </div>
-    </section>
-
-    <footer>
-      Bitcoin Câmbio P2P · Atendimento P2P em Ciudad del Este.
-    </footer>
-  </div>
-
-  <script>
-    const spreadPercent = 0.01;        // 1% só na compra de cripto
-    const taxaCryptoPercent = 0.05;    // 5% em cripto (compra e venda)
-
-    const rates = { BTC: null, ETH: null, USDT: 1, USD_PYG: null, USD_BRL: null };
-
-    const tickerDiv = document.getElementById("ticker");
-    const resultadoCotacaoDiv = document.getElementById("resultadoCotacao");
-    const equivalenteUSDSpan = document.getElementById("equivalenteUSD");
-    const equivalenteBRLSpan = document.getElementById("equivalenteBRL");
-
-    const moedaSelect = document.getElementById("moeda");
-    const tipoOperacaoSelect = document.getElementById("tipoOperacao");
-    const valorPYGInput = document.getElementById("valorPYG");
-
-    const fxDirecaoSelect = document.getElementById("fxDirecao");
-    const fxValorInput = document.getElementById("fxValor");
-    const fxResultadoDiv = document.getElementById("fxResultado");
-
-    const toggleFxBtn = document.getElementById("toggleFxBtn");
-    const fxSection = document.getElementById("fxSection");
-
-    function formatMoney(value, decimals = 2) {
-      return value.toLocaleString("pt-BR", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-    }
-    function isCrypto(moeda) {
-      return ["BTC","ETH","USDT"].includes(moeda);
-    }
-
-    async function fetchRates() {
-      try {
-        const [btcRes, ethRes, fxRes] = await Promise.all([
-          fetch("https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT"),
-          fetch("https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT"),
-          fetch("https://open.er-api.com/v6/latest/USD")
-        ]);
-        const btcData = await btcRes.json();
-        const ethData = await ethRes.json();
-        const fxData = await fxRes.json();
-
-        if (btcData && btcData.price) rates.BTC = parseFloat(btcData.price);
-        if (ethData && ethData.price) rates.ETH = parseFloat(ethData.price);
-        if (fxData && fxData.rates) {
-          if (fxData.rates.PYG) rates.USD_PYG = parseFloat(fxData.rates.PYG);
-          if (fxData.rates.BRL) rates.USD_BRL = parseFloat(fxData.rates.BRL);
-        }
-        if (!rates.USD_PYG) rates.USD_PYG = 7500;
-        if (!rates.USD_BRL) rates.USD_BRL = 5.5;
-
-        atualizarTicker();
-        atualizarSimulacaoCripto();
-        atualizarCambioFisico();
-      } catch (e) {
-        console.error("Erro ao buscar cotações:", e);
-        if (!rates.BTC) rates.BTC = 70000;
-        if (!rates.ETH) rates.ETH = 3500;
-        if (!rates.USD_PYG) rates.USD_PYG = 7500;
-        if (!rates.USD_BRL) rates.USD_BRL = 5.5;
-        tickerDiv.textContent = "Usando cotações aproximadas.";
-        atualizarSimulacaoCripto();
-        atualizarCambioFisico();
-      }
-    }
-
-    function atualizarTicker() {
-      if (!rates.USD_PYG || !rates.USD_BRL) {
-        tickerDiv.textContent = "Carregando cotações...";
-        return;
-      }
-      const parts = [];
-      if (rates.BTC) parts.push(`<span class="badge"><strong>BTC</strong> ~ US$ ${formatMoney(rates.BTC)}</span>`);
-      if (rates.ETH) parts.push(`<span class="badge"><strong>ETH</strong> ~ US$ ${formatMoney(rates.ETH)}</span>`);
-      parts.push(`<span class="badge"><strong>USDT</strong> US$ 1,00</span>`);
-      parts.push(`<span class="badge"><strong>1 USD ≈</strong> ${formatMoney(rates.USD_PYG,0)} PYG</span>`);
-      parts.push(`<span class="badge"><strong>1 USD ≈</strong> R$ ${formatMoney(rates.USD_BRL)}</span>`);
-      tickerDiv.innerHTML = parts.join("");
-    }
-
-    function atualizarSimulacaoCripto() {
-      const moeda = moedaSelect.value;
-      const tipoOperacao = tipoOperacaoSelect.value;
-      const valorPYG = parseFloat(valorPYGInput.value || "0");
-
-      if (!rates.USD_PYG || !rates.USD_BRL) {
-        resultadoCotacaoDiv.textContent = "Aguardando cotações em tempo real...";
-        return;
-      }
-
-      if (!valorPYG || valorPYG <= 0) {
-        resultadoCotacaoDiv.textContent = "Informe um valor em PYG para simular.";
-        equivalenteUSDSpan.textContent = "Equivalente aproximado em USD: -";
-        equivalenteBRLSpan.textContent = "Equivalente aproximado em BRL: -";
-        return;
-      }
-
-      const valorUSDbase = valorPYG / rates.USD_PYG;
-      const valorBRLbase = valorUSDbase * rates.USD_BRL;
-
-      equivalenteUSDSpan.textContent = `Equivalente aproximado em USD: US$ ${formatMoney(valorUSDbase)}`;
-      equivalenteBRLSpan.textContent = `Equivalente aproximado em BRL: R$ ${formatMoney(valorBRLbase)}`;
-
-      if (!isCrypto(moeda)) {
-        resultadoCotacaoDiv.textContent = "Selecione uma criptomoeda válida.";
-        return;
-      }
-
-      if (moeda === "BTC" && !rates.BTC) { resultadoCotacaoDiv.textContent = "Cotação de BTC indisponível."; return; }
-      if (moeda === "ETH" && !rates.ETH) { resultadoCotacaoDiv.textContent = "Cotação de ETH indisponível."; return; }
-
-      const precoRef = (moeda==="BTC") ? rates.BTC : (moeda==="ETH") ? rates.ETH : 1;
-
-      let precoUsado;
-      if (tipoOperacao === "comprar") {
-        precoUsado = (moeda==="BTC" || moeda==="ETH") ? precoRef*(1+spreadPercent) : precoRef;
-      } else {
-        precoUsado = precoRef; // venda sem spread
-      }
-
-      const quantidade = valorUSDbase / precoUsado;
-      const taxaServico = valorUSDbase * taxaCryptoPercent;
-
-      let totalUSD, textoOperacao;
-      if (tipoOperacao === "comprar") {
-        totalUSD = valorUSDbase + taxaServico;
-        textoOperacao = "Total aproximado a pagar";
-      } else {
-        totalUSD = valorUSDbase - taxaServico;
-        textoOperacao = "Total aproximado a receber";
-      }
-
-      const totalPYGFinal = totalUSD * rates.USD_PYG;
-      const totalBRLFinal = totalUSD * rates.USD_BRL;
-
-      resultadoCotacaoDiv.innerHTML = `
-        <div><strong>${tipoOperacao === "comprar" ? "Compra" : "Venda"} de ${moeda}</strong></div>
-        <div>Quantidade aproximada: <strong>${quantidade.toFixed(8)} ${moeda}</strong></div>
-        <div>Taxa de serviço (5%): <strong>US$ ${formatMoney(taxaServico)}</strong></div>
-        <div style="margin-top:6px;">
-          ${textoOperacao}:<br>
-          • <strong>US$ ${formatMoney(totalUSD)}</strong><br>
-          • ~ <strong>${formatMoney(totalPYGFinal,0)} PYG</strong><br>
-          • ~ <strong>R$ ${formatMoney(totalBRLFinal)}</strong>
-        </div>
-      `;
-    }
-
-    function atualizarCambioFisico() {
-      const direcao = fxDirecaoSelect.value;
-      const valor = parseFloat(fxValorInput.value || "0");
-
-      if (!rates.USD_PYG || !rates.USD_BRL) {
-        fxResultadoDiv.textContent = "Aguardando cotações em tempo real...";
-        return;
-      }
-
-      if (!valor || valor <= 0) {
-        fxResultadoDiv.textContent = "Informe um valor para simular o câmbio físico.";
-        return;
-      }
-
-      let texto = "";
-
-      if (direcao === "USD_PYG") {
-        const valorUSD = valor;
-        const valorPYG = valorUSD * rates.USD_PYG;
-        texto = `
-          <div>Você entrega: <strong>US$ ${formatMoney(valorUSD)}</strong></div>
-          <div>Você recebe: <strong>${formatMoney(valorPYG,0)} PYG</strong></div>
-        `;
-      } else if (direcao === "BRL_PYG") {
-        const valorBRL = valor;
-        const valorUSD = valorBRL / rates.USD_BRL;
-        const valorPYG = valorUSD * rates.USD_PYG;
-        texto = `
-          <div>Você entrega: <strong>R$ ${formatMoney(valorBRL)}</strong></div>
-          <div>Você recebe: <strong>${formatMoney(valorPYG,0)} PYG</strong></div>
-        `;
-      } else if (direcao === "PYG_USD") {
-        const valorPYG = valor;
-        const valorUSD = valorPYG / rates.USD_PYG;
-        texto = `
-          <div>Você entrega: <strong>${formatMoney(valorPYG,0)} PYG</strong></div>
-          <div>Você recebe: <strong>US$ ${formatMoney(valorUSD)}</strong></div>
-        `;
-      } else if (direcao === "PYG_BRL") {
-        const valorPYG = valor;
-        const valorUSD = valorPYG / rates.USD_PYG;
-        const valorBRL = valorUSD * rates.USD_BRL;
-        texto = `
-          <div>Você entrega: <strong>${formatMoney(valorPYG,0)} PYG</strong></div>
-          <div>Você recebe: <strong>R$ ${formatMoney(valorBRL)}</strong></div>
-        `;
-      }
-
-      fxResultadoDiv.innerHTML = texto + `
-        <div class="small-text" style="margin-top:6px;">
-          Câmbio físico sem taxa de 5%. Valores aproximados.
-        </div>
-      `;
-    }
-
-    moedaSelect.addEventListener("change", atualizarSimulacaoCripto);
-    tipoOperacaoSelect.addEventListener("change", atualizarSimulacaoCripto);
-    valorPYGInput.addEventListener("input", atualizarSimulacaoCripto);
-
-    fxDirecaoSelect.addEventListener("change", atualizarCambioFisico);
-    fxValorInput.addEventListener("input", atualizarCambioFisico);
-
-    toggleFxBtn.addEventListener("click", () => {
-      if (fxSection.style.display === "none" || fxSection.style.display === "") {
-        fxSection.style.display = "block";
-        toggleFxBtn.textContent = "Esconder simulador de câmbio físico";
-      } else {
-        fxSection.style.display = "none";
-        toggleFxBtn.textContent = "Mostrar simulador de câmbio físico";
-      }
-    });
-
-    document.getElementById("btnWhatsapp").addEventListener("click", function () {
-      const nome = document.getElementById("nome").value.trim();
-      const telefoneCliente = document.getElementById("telefone").value.trim();
-      const moedaForm = document.getElementById("moedaForm").value;
-      const tipoOperacaoForm = document.getElementById("tipoOperacaoForm").value;
-      const valorPYGForm = parseFloat(document.getElementById("valorPYGForm").value || "0");
-      const pagamento = document.getElementById("pagamento").value;
-      const observacoes = document.getElementById("observacoes").value.trim();
-
-      if (!nome || !telefoneCliente || !valorPYGForm || valorPYGForm <= 0) {
-        alert("Preencha nome, telefone e valor em PYG para enviar o pedido.");
-        return;
-      }
-      if (!rates.USD_PYG || !rates.USD_BRL) {
-        alert("Cotações ainda não carregadas. Tente novamente.");
-        return;
-      }
-
-      const isCriptoForm = isCrypto(moedaForm);
-      const valorUSDFormBase = valorPYGForm / rates.USD_PYG;
-      const valorBRLFormBase = valorUSDFormBase * rates.USD_BRL;
-
-      let precoRef = 1;
-      if (moedaForm === "BTC") precoRef = rates.BTC || 70000;
-      if (moedaForm === "ETH") precoRef = rates.ETH || 3500;
-      if (moedaForm === "USDT") precoRef = 1;
-      if (moedaForm === "PYG") precoRef = rates.USD_PYG;
-
-      let precoUsado;
-      if (isCriptoForm) {
-        if (tipoOperacaoForm === "comprar") {
-          precoUsado = (moedaForm==="BTC"||moedaForm==="ETH") ? precoRef*(1+spreadPercent) : precoRef;
-        } else {
-          precoUsado = precoRef; // venda sem spread
-        }
-      } else {
-        precoUsado = rates.USD_PYG; // câmbio físico referência
-      }
-
-      let taxaServicoForm = 0;
-      let totalUSDForm = valorUSDFormBase;
-      let totalPYGFormFinal = valorPYGForm;
-      let totalBRLFormFinal = valorBRLFormBase;
-      let quantidadeForm = 0;
-      let textoOperacaoForm;
-
-      if (isCriptoForm) {
-        quantidadeForm = valorUSDFormBase / precoUsado;
-        taxaServicoForm = valorUSDFormBase * taxaCryptoPercent;
-
-        if (tipoOperacaoForm === "comprar") {
-          totalUSDForm = valorUSDFormBase + taxaServicoForm;
-          textoOperacaoForm = "Total aproximado a pagar";
-        } else {
-          totalUSDForm = valorUSDFormBase - taxaServicoForm;
-          textoOperacaoForm = "Total aproximado a receber";
+        function goToScreen(num) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(`screen-${num}`).classList.add('active');
+            window.scrollTo(0,0);
         }
 
-        totalPYGFormFinal = totalUSDForm * rates.USD_PYG;
-        totalBRLFormFinal = totalUSDForm * rates.USD_BRL;
-      } else {
-        const usdPeloSiteForm = valorPYGForm / rates.USD_PYG;
-        totalUSDForm = usdPeloSiteForm;
-        textoOperacaoForm = tipoOperacaoForm==="comprar" ? "USD aproximado a pagar" : "USD aproximado a receber";
-        totalPYGFormFinal = valorPYGForm;
-        totalBRLFormFinal = totalUSDForm * rates.USD_BRL;
-      }
+        async function fetchRate() {
+            try {
+                const res = await fetch('https://economia.awesomeapi.com.br/last/USD-BRL');
+                const data = await res.json();
+                realUsdRate = parseFloat(data.USDBRL.bid);
+                calculate();
+            } catch (e) { console.error("Erro API Dólar"); }
+        }
 
-      const texto = `
-*Novo pedido P2P - Bitcoin Câmbio P2P*
+        async function fetchTicker() {
+            try {
+                const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,binancecoin,solana,tron&vs_currencies=usd');
+                const data = await res.json();
+                const ticker = document.getElementById('ticker-content');
+                const coins = { bitcoin:'BTC', ethereum:'ETH', binancecoin:'BNB', solana:'SOL', tron:'TRX' };
+                let html = '<span class="ticker-item">GUAX P2P: A MOEDA DO FUTURO</span>';
+                Object.keys(coins).forEach(c => {
+                    html += `<span class="ticker-item">${coins[c]}: $${data[c].usd.toLocaleString()}</span>`;
+                });
+                ticker.innerHTML = html + html;
+            } catch (e) {}
+        }
 
-Nome: ${nome}
-Telefone do cliente: ${telefoneCliente}
+        // --- MATEMÁTICA DE PRECISÃO P2P ---
+        function calculate() {
+            const brl = parseFloat(document.getElementById('brl-input').value) || 0;
+            const coin = document.getElementById('coin-select').value;
+            
+            // 1. Cotação Real + Spread (0.5%) e ARREDONDA para 2 casas (Ex: 5.19585 -> 5.20)
+            const rateWithSpread = Math.round((realUsdRate * (1 + spread)) * 100) / 100;
+            document.getElementById('rate-display').innerText = `R$ ${rateWithSpread.toFixed(2)}`;
 
-Operação: ${tipoOperacaoForm === "comprar" ? "Comprar" : "Vender"}
-Tipo: ${moedaForm === "PYG" ? "Câmbio físico (Guaranis)" : "Criptomoeda - " + moedaForm}
-Forma de pagamento: ${pagamento}
+            if (brl >= 50 && brl <= 500) {
+                // 2. Converte BRL para Cripto e ARREDONDA para 2 casas (Ex: 96.1538 -> 96.15)
+                const cryptoGross = Math.round((brl / rateWithSpread) * 100) / 100;
+                
+                // 3. Calcula a Taxa de Rede (1%) sobre o valor bruto e ARREDONDA
+                const feeAmount = Math.round((cryptoGross * networkFee) * 100) / 100;
+                
+                // 4. Valor Final
+                const finalReceive = cryptoGross - feeAmount;
+                
+                document.getElementById('receive-display').innerText = `${finalReceive.toFixed(2)} ${coin}`;
+            } else {
+                document.getElementById('receive-display').innerText = `0.00 ${coin}`;
+            }
+        }
 
-Valor em PYG: ${valorPYGForm.toFixed(0)} PYG
-Valor aproximado em USD: ${valorUSDFormBase.toFixed(2)} USD
-Valor aproximado em BRL: R$ ${valorBRLFormBase.toFixed(2)}
+        function validateStep2() {
+            const name = document.getElementById('name-input').value;
+            const email = document.getElementById('email-input').value;
+            const brl = parseFloat(document.getElementById('brl-input').value);
+            const wallet = document.getElementById('wallet-input').value;
+            const whatsapp = document.getElementById('whatsapp-input').value;
 
-Preço usado: ${isCriptoForm ? "US$ " + precoUsado.toFixed(2) + " por 1 " + moedaForm : rates.USD_PYG.toFixed(0) + " PYG por 1 USD"}
+            if (name.trim().split(' ').length < 2) return alert("Insira seu NOME COMPLETO.");
+            if (!email.includes('@') || email.length < 5) return alert("Insira um E-MAIL válido.");
+            if (brl < 50 || brl > 500 || isNaN(brl)) return alert("Valor entre R$ 50 e R$ 500.");
+            if (wallet.length < 10) return alert("Endereço de carteira inválido.");
+            if (whatsapp.length < 8) return alert("WhatsApp obrigatório.");
 
-${isCriptoForm ? `Quantidade aproximada: ${quantidadeForm.toFixed(8)} ${moedaForm}` : ""}
+            orderData = {
+                name, email, brl, wallet, whatsapp,
+                coin: document.getElementById('coin-select').value,
+                network: document.getElementById('network-select').value,
+                receive: document.getElementById('receive-display').innerText
+            };
 
-${isCriptoForm ? `Taxa de serviço (5% sobre o valor em USD): ${taxaServicoForm.toFixed(2)} USD` : "Sem taxa de 5% (câmbio físico)"}
+            document.getElementById('final-brl').innerText = `R$ ${brl.toFixed(2)}`;
+            goToScreen(3);
+        }
 
-${textoOperacaoForm}: 
-• ~ ${totalUSDForm.toFixed(2)} USD
-• ~ ${totalPYGFormFinal.toFixed(0)} PYG
-• ~ R$ ${totalBRLFormFinal.toFixed(2)}
+        function generateQR() {
+            new QRious({
+                element: document.getElementById('qrcode'),
+                value: document.getElementById('pix-code').value,
+                size: 220
+            });
+        }
 
-Observações: ${observacoes || "Nenhuma"}
-      `.trim();
+        function copyPix() {
+            const input = document.getElementById('pix-code');
+            input.select();
+            navigator.clipboard.writeText(input.value);
+            alert("Código Pix Copiado!");
+        }
 
-      const seuNumeroWhatsApp = "595991398215"; // TROCA AQUI
-      const url = `https://wa.me/${seuNumeroWhatsApp}?text=${encodeURIComponent(texto)}`;
-      window.open(url, "_blank");
-    });
-
-    fetchRates();
-    setInterval(fetchRates, 60000);
-  </script>
+        function finishOrder() {
+            const msg = `Hola confira meu pagamento do meu pedido.
+Nome: ${orderData.name}
+Email: ${orderData.email}
+Valor final: ${orderData.receive}
+Valor em Reais: R$ ${orderData.brl.toFixed(2)}
+Endereço da carteira: ${orderData.wallet}
+Rede: ${orderData.network}`;
+            
+            window.open(`https://api.whatsapp.com/send?phone=595991398215&text=${encodeURIComponent(msg)}`);
+        }
+    </script>
 </body>
 </html>
